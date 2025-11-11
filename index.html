@@ -36,12 +36,13 @@
       display: block;
       background: transparent;
       border-radius: 8px;
+      cursor: crosshair;
     }
   </style>
 </head>
 <body>
   <h1>HTML5 Pool (Single-File Demo)</h1>
-  <p>Click/tap near the cue ball, drag to aim, release to shoot. All logic is contained in this single HTML file.</p>
+  <p>Click/tap near the cue ball, pull back (away from the target), release to shoot. The line shows the shot direction from the cue ball.</p>
   <div id="gameWrapper">
     <canvas id="poolCanvas" width="800" height="400"></canvas>
   </div>
@@ -57,19 +58,19 @@
       rail: 22,
       pocketRadius: 18,
       ballRadius: 10,
-      friction: 0.985,     // velocity multiplier per frame
-      stopEpsilon: 0.03    // threshold to treat as stopped
+      friction: 0.985,
+      stopEpsilon: 0.03
     };
 
     let lastTime = 0;
-    const BASE_DT = 1 / 60; // reference step (~60 FPS)
+    const BASE_DT = 1 / 60;
 
     // === State ===
     const balls = [];
     let cueBall = null;
     let isAiming = false;
-    let aimStart = null;
-    let aimCurrent = null;
+    let aimStart = null;     // always cue ball position when starting aim
+    let aimCurrent = null;   // current pointer position while dragging
     let shotInProgress = false;
     const pockets = createPockets();
 
@@ -80,28 +81,20 @@
       const h = TABLE.height;
       return [
         { x: 0,    y: 0,    r },
-        { x: w/2,  y: 0,    r },
+        { x: w / 2, y: 0,   r },
         { x: w,    y: 0,    r },
         { x: 0,    y: h,    r },
-        { x: w/2,  y: h,    r },
+        { x: w / 2, y: h,   r },
         { x: w,    y: h,    r }
       ];
     }
 
-    function len(x, y) {
-      return Math.sqrt(x * x + y * y);
-    }
-
-    function norm(x, y) {
-      const l = len(x, y) || 1;
-      return { x: x / l, y: y / l };
-    }
+    function len(x, y) { return Math.sqrt(x * x + y * y); }
+    function norm(x, y) { const l = len(x, y) || 1; return { x: x / l, y: y / l }; }
 
     function allBallsStopped() {
       for (const b of balls) {
-        if (!b.pocketed && (Math.abs(b.vx) > TABLE.stopEpsilon || Math.abs(b.vy) > TABLE.stopEpsilon)) {
-          return false;
-        }
+        if (!b.pocketed && (Math.abs(b.vx) > TABLE.stopEpsilon || Math.abs(b.vy) > TABLE.stopEpsilon)) return false;
       }
       return true;
     }
@@ -115,11 +108,11 @@
       cueBall = createBall(TABLE.width * 0.25, TABLE.height / 2, '#ffffff', true);
       balls.push(cueBall);
 
-      // Simple triangle rack of balls
+      // Triangle rack
       const startX = TABLE.width * 0.65;
       const startY = TABLE.height / 2;
       const gap = TABLE.ballRadius * 2 + 1.5;
-      const colors = ['#ff4444','#ffaa00','#ffee00','#44ff00','#00aaff','#aa44ff','#ff66aa','#00ffaa','#ffaa44'];
+      const colors = ['#ff4444','#ffaa00','#ffee00','#44ff44','#44aaff','#aa44ff','#ff66aa','#00ffaa','#ffaa44'];
       let c = 0;
       const rows = 5;
       for (let row = 0; row < rows; row++) {
@@ -134,7 +127,7 @@
       }
     }
 
-    // === Input ===
+    // === Input (pull-back aiming) ===
     function getCanvasPos(e) {
       const rect = canvas.getBoundingClientRect();
       const clientX = e.touches ? e.touches[0].clientX : e.clientX;
@@ -152,6 +145,7 @@
       const dx = pos.x - cueBall.x;
       const dy = pos.y - cueBall.y;
       if (len(dx, dy) <= cueBall.r * 2.5) {
+        // Start aiming from cue ball; user will pull back from here
         isAiming = true;
         aimStart = { x: cueBall.x, y: cueBall.y };
         aimCurrent = pos;
@@ -168,17 +162,21 @@
     function onPointerUp(e) {
       if (!isAiming) return;
       const pos = aimCurrent || getCanvasPos(e);
-      const dx = aimStart.x - pos.x;
-      const dy = aimStart.y - pos.y;
-      const drag = Math.min(len(dx, dy), 160);
-      if (drag > 4) {
-        const dir = norm(dx, dy);
+      // Pull-back vector: from cue ball to cursor (dragged back)
+      const pullX = pos.x - aimStart.x;
+      const pullY = pos.y - aimStart.y;
+      const pullDist = Math.min(len(pullX, pullY), 160);
+
+      if (pullDist > 4) {
+        // Shot direction is opposite of pull-back: from cue ball toward the table
+        const shotDir = norm(-pullX, -pullY);
         const maxSpeed = 14;
-        const speed = (drag / 160) * maxSpeed;
-        cueBall.vx += dir.x * speed;
-        cueBall.vy += dir.y * speed;
+        const speed = (pullDist / 160) * maxSpeed;
+        cueBall.vx += shotDir.x * speed;
+        cueBall.vy += shotDir.y * speed;
         shotInProgress = true;
       }
+
       isAiming = false;
       aimStart = null;
       aimCurrent = null;
@@ -200,14 +198,14 @@
       const minY = TABLE.rail + TABLE.ballRadius;
       const maxY = TABLE.height - TABLE.rail - TABLE.ballRadius;
 
-      // Integrate positions
+      // Integrate
       for (const b of balls) {
         if (b.pocketed) continue;
         b.x += b.vx;
         b.y += b.vy;
       }
 
-      // Rail collisions
+      // Rails
       for (const b of balls) {
         if (b.pocketed) continue;
         if (b.x < minX) { b.x = minX; b.vx = -b.vx; }
@@ -216,7 +214,7 @@
         if (b.y > maxY) { b.y = maxY; b.vy = -b.vy; }
       }
 
-      // Ball-ball collisions (equal mass elastic)
+      // Ball-ball collisions
       for (let i = 0; i < balls.length; i++) {
         const a = balls[i];
         if (a.pocketed) continue;
@@ -231,12 +229,10 @@
             const nx = dx / dist;
             const ny = dy / dist;
             const overlap = (minDist - dist) / 2;
-            // Separate
             a.x -= nx * overlap;
             a.y -= ny * overlap;
             b.x += nx * overlap;
             b.y += ny * overlap;
-            // Relative velocity along normal
             const dvx = b.vx - a.vx;
             const dvy = b.vy - a.vy;
             const rel = dvx * nx + dvy * ny;
@@ -265,7 +261,6 @@
             b.vx = 0;
             b.vy = 0;
             if (b.isCue) {
-              // Respawn cue ball shortly after being pocketed
               setTimeout(() => {
                 b.pocketed = false;
                 b.x = TABLE.width * 0.25;
@@ -279,7 +274,7 @@
         }
       }
 
-      // Friction & stop detection
+      // Friction & stop
       let anyMoving = false;
       const f = Math.pow(TABLE.friction, dtFactor);
       for (const b of balls) {
@@ -296,16 +291,13 @@
     // === Rendering ===
     function drawTable() {
       const w = TABLE.width, h = TABLE.height, r = TABLE.rail;
-      // Felt
       ctx.fillStyle = '#0b6b2a';
       ctx.fillRect(0, 0, w, h);
-      // Rails
       ctx.fillStyle = '#5a3b19';
       ctx.fillRect(0, 0, w, r);
       ctx.fillRect(0, h - r, w, r);
       ctx.fillRect(0, 0, r, h);
       ctx.fillRect(w - r, 0, r, h);
-      // Pockets
       for (const p of pockets) {
         ctx.beginPath();
         ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
@@ -331,26 +323,29 @@
 
     function drawAim() {
       if (!isAiming || !aimStart || !aimCurrent || cueBall.pocketed) return;
-      const dx = aimStart.x - aimCurrent.x;
-      const dy = aimStart.y - aimCurrent.y;
-      const drag = Math.min(len(dx, dy), 160);
-      if (drag < 4) return;
-      const dir = norm(dx, dy);
+      // Pull-back vector from cue ball to cursor
+      const pullX = aimCurrent.x - aimStart.x;
+      const pullY = aimCurrent.y - aimStart.y;
+      const pullDist = Math.min(len(pullX, pullY), 160);
+      if (pullDist < 4) return;
+
+      // Shot direction is opposite of pull-back: from cue ball into table
+      const shotDir = norm(-pullX, -pullY);
       const maxLen = 110;
-      const lineLen = (drag / 160) * maxLen;
-      const ex = cueBall.x + dir.x * lineLen;
-      const ey = cueBall.y + dir.y * lineLen;
+      const lineLen = (pullDist / 160) * maxLen;
+      const ex = cueBall.x + shotDir.x * lineLen;
+      const ey = cueBall.y + shotDir.y * lineLen;
 
       ctx.save();
-      ctx.strokeStyle = 'rgba(255,255,255,0.85)';
+      ctx.strokeStyle = 'rgba(255,255,255,0.9)';
       ctx.lineWidth = 2;
       ctx.beginPath();
       ctx.moveTo(cueBall.x, cueBall.y);
       ctx.lineTo(ex, ey);
       ctx.stroke();
 
-      // Power bar
-      const power = drag / 160;
+      // Power bar near cue ball
+      const power = pullDist / 160;
       const bw = 80, bh = 6;
       const bx = cueBall.x - bw / 2;
       const by = cueBall.y - cueBall.r - 16;
@@ -377,7 +372,6 @@
       requestAnimationFrame(loop);
     }
 
-    // Init
     setupBalls();
     requestAnimationFrame(loop);
   </script>
