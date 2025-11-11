@@ -2,16 +2,67 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>HTML5 Pool Game</title>
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <h1>HTML5 Pool (Multi-File)</h1>
-  <p>Click/tap near the cue ball, pull back (away from the target), release to shoot. The line shows the shot direction from the cue ball.</p>
-  <div id="gameWrapper">
-    <canvas id="poolCanvas" width="800" height="400"></canvas>
+  <div class="app-shell">
+    <header class="app-header">
+      <div class="brand">
+        <h1 class="app-title">Canvas Pool</h1>
+        <span class="app-subtitle">Minimal, focused HTML5 billiards</span>
+      </div>
+      <div class="app-tools" aria-label="Global controls">
+        <button id="btn-help" class="icon-btn" type="button">?<span class="sr-only">Help / How to Play</span></button>
+        <button id="btn-restart" class="icon-btn" type="button">&#10227;<span class="sr-only">Restart</span></button>
+        <button id="btn-high-contrast" class="icon-btn" type="button">HC<span class="sr-only">Toggle high contrast mode</span></button>
+        <button id="btn-reduced-motion" class="icon-btn" type="button">RM<span class="sr-only">Toggle reduced motion mode</span></button>
+      </div>
+    </header>
+
+    <main class="app-main" aria-label="Game area">
+      <section class="info" aria-labelledby="how-to-title">
+        <h2 id="how-to-title">How to Play</h2>
+        <ul class="howto-list">
+          <li>Click or tap near the cue ball to grab it.</li>
+          <li>Pull back away from your target to set aim and power.</li>
+          <li>Release to shoot. Wait until all balls stop before the next shot.</li>
+          <li>Pocketing the cue ball will respot it automatically.</li>
+        </ul>
+      </section>
+
+      <section class="game-section">
+        <div class="game-wrapper" aria-label="Pool table">
+          <div class="hud-strip" aria-live="polite" aria-atomic="true">
+            <div class="hud-power" id="hud-power">Power: 0%</div>
+            <div class="hud-status" id="hud-status">Ready</div>
+          </div>
+          <div id="gameWrapper" class="canvas-frame">
+            <canvas id="poolCanvas" width="800" height="400"></canvas>
+          </div>
+        </div>
+      </section>
+
+      <section class="controls-panel" aria-label="Game controls and accessibility">
+        <div class="controls-row">
+          <button id="btn-help-text" type="button" class="primary-btn">How to Play</button>
+          <button id="btn-reset-table" type="button" class="secondary-btn">Reset Table</button>
+          <button id="btn-toggle-sound" type="button" class="secondary-btn">Sound: Off</button>
+        </div>
+        <div id="help-panel" class="help-panel" hidden>
+          <h3>Quick Tips</h3>
+          <p>Drag back from the cue ball to aim and set power, then release to shoot. Works with mouse or touch.</p>
+        </div>
+      </section>
+    </main>
+
+    <footer class="app-footer">
+      <small>Canvas Pool demo &middot; Built for clarity, accessibility, and responsive play.</small>
+    </footer>
+
+    <div id="aria-status" class="sr-only" aria-live="polite" aria-atomic="true"></div>
   </div>
+
   <script src="game.js"></script>
 </body>
 </html>
