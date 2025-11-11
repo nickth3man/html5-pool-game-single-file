@@ -1,5 +1,21 @@
-/* Phase 1: base layout + existing visuals */
+/* Base reset & box model */
 * { box-sizing: border-box; }
+
+:root {
+  --bg-main: #05070b;
+  --bg-elevated: #0b0f18;
+  --bg-hud: #020817;
+  --felt: #065f46;
+  --rail: #5a3b19;
+  --accent: #22c55e;
+  --accent-alt: #38bdf8;
+  --accent-warn: #f97316;
+  --text-main: #e5e7eb;
+  --text-subtle: #9ca3af;
+  --text-muted: #6b7280;
+  --border-soft: #111827;
+  --outline: #22c55e;
+}
 
 body {
   margin: 0;
@@ -7,9 +23,11 @@ body {
   display: flex;
   justify-content: center;
   align-items: stretch;
-  background: #06070a;
-  color: #e5e7eb;
-  font-family: system-ui, -apple-system, BlinkMacSystemFont, -sans-serif;
+  background: var(--bg-main);
+  color: var(--text-main);
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+  font-size: 17px;
+  line-height: 1.5;
 }
 
 .app-shell {
@@ -35,34 +53,25 @@ body {
   gap: 12px;
 }
 
+.brand {
+  display: flex;
+  flex-direction: column;
+}
+
 .app-title {
   margin: 0;
-  font-size: 24px;
+  font-size: 26px;
   font-weight: 600;
 }
 
 .app-subtitle {
-  display: block;
   font-size: 13px;
-  color: #9ca3af;
+  color: var(--text-subtle);
 }
 
 .app-tools {
   display: flex;
   gap: 8px;
-}
-
-.icon-btn {
-  position: relative;
-  min-width: 32px;
-  height: 32px;
-  padding: 0 6px;
-  border-radius: 6px;
-  border: 1px solid #374151;
-  background: #111827;
-  color: #e5e7eb;
-  font-size: 11px;
-  cursor: pointer;
 }
 
 .app-main {
@@ -71,23 +80,42 @@ body {
   gap: 16px;
 }
 
+/* Icon buttons / toolbar */
+.icon-btn {
+  position: relative;
+  min-width: 32px;
+  height: 32px;
+  padding: 0 6px;
+  border-radius: 6px;
+  border: 1px solid #374151;
+  background: #111827;
+  color: var(--text-main);
+  font-size: 11px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Info / How to Play */
 .info {
-  background: #0b0f18;
+  background: var(--bg-elevated);
   border-radius: 10px;
   padding: 10px 12px;
-  border: 1px solid #111827;
+  border: 1px solid var(--border-soft);
 }
 
 .info h2 {
   margin: 0 0 6px;
-  font-size: 16px;
+  font-size: 17px;
+  font-weight: 600;
 }
 
 .howto-list {
   margin: 0;
   padding-left: 18px;
-  font-size: 14px;
-  color: #d1d5db;
+  font-size: 15px;
+  color: var(--text-main);
 }
 
 .game-section {
@@ -102,22 +130,33 @@ body {
   gap: 4px;
 }
 
+/* HUD strip directly above canvas */
 .hud-strip {
   display: flex;
   justify-content: space-between;
   align-items: center;
   gap: 8px;
   padding: 4px 8px;
-  font-size: 12px;
-  background: #020817;
+  font-size: 13px;
+  background: var(--bg-hud);
   border-radius: 8px 8px 0 0;
-  border: 1px solid #111827;
+  border: 1px solid var(--border-soft);
   border-bottom: none;
 }
 
+.hud-power {
+  color: var(--accent);
+  font-weight: 500;
+}
+
+.hud-status {
+  color: var(--text-subtle);
+}
+
+/* Canvas frame aligned with in-canvas rails */
 .canvas-frame {
   border-radius: 10px;
-  border: 2px solid #5a3b19;
+  border: 2px solid var(--rail);
   padding: 4px;
   background: #064e3b;
   box-shadow: 0 10px 30px rgba(0,0,0,0.65);
@@ -133,6 +172,7 @@ body {
   cursor: crosshair;
 }
 
+/* Controls panel */
 .controls-panel {
   display: flex;
   flex-direction: column;
@@ -148,33 +188,43 @@ body {
 .primary-btn,
 .secondary-btn {
   padding: 6px 10px;
-  font-size: 13px;
+  font-size: 14px;
   border-radius: 6px;
   border: 1px solid #374151;
   background: #111827;
-  color: #e5e7eb;
+  color: var(--text-main);
   cursor: pointer;
 }
 
 .primary-btn {
-  background: #1d4ed8;
-  border-color: #1d4ed8;
+  background: var(--accent-alt);
+  border-color: var(--accent-alt);
 }
 
 .help-panel {
   padding: 6px 8px;
-  font-size: 13px;
-  background: #020817;
+  font-size: 14px;
+  background: var(--bg-hud);
   border-radius: 6px;
-  border: 1px solid #111827;
+  border: 1px solid var(--border-soft);
 }
 
 .app-footer {
   margin-top: 4px;
   font-size: 11px;
-  color: #6b7280;
+  color: var(--text-muted);
 }
 
+/* Accessibility: focus outlines */
+button:focus-visible,
+.icon-btn:focus-visible,
+.primary-btn:focus-visible,
+.secondary-btn:focus-visible {
+  outline: 3px solid var(--outline);
+  outline-offset: 2px;
+}
+
+/* Screen-reader only */
 .sr-only {
   position: absolute;
   width: 1px;
@@ -185,4 +235,40 @@ body {
   clip: rect(0, 0, 0, 0);
   white-space: nowrap;
   border: 0;
+}
+
+/* High contrast mode */
+body.high-contrast {
+  --bg-main: #02030a;
+  --bg-elevated: #020817;
+  --bg-hud: #020817;
+  --felt: #047857;
+  --rail: #92400e;
+  --accent: #facc15;
+  --accent-alt: #38bdf8;
+  --text-main: #f9fafb;
+  --text-subtle: #e5e7eb;
+  --text-muted: #9ca3af;
+  --border-soft: #4b5563;
+  --outline: #facc15;
+}
+
+body.high-contrast .hud-power {
+  color: var(--accent);
+}
+
+/* Reduced motion: tone down transitions if added later */
+body.reduced-motion *,
+body.reduced-motion *::before,
+body.reduced-motion *::after {
+  scroll-behavior: auto !important;
+  animation-duration: 0.001ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.001ms !important;
+}
+
+@media (min-width: 900px) {
+  .app-main {
+    gap: 18px;
+  }
 }
